@@ -1,6 +1,8 @@
 import os.path
 from tkinter import simpledialog, Frame, Label, StringVar, OptionMenu, LabelFrame, Button, N, LEFT, RIGHT, TOP, BOTTOM, BOTH, filedialog, messagebox
 
+from .annotate import annotate_all
+
 
 class InitWindow:
     def __init__(self, win):
@@ -28,8 +30,7 @@ class InitWindow:
         self.button_annot.pack(padx=3, pady=3)
         self.button_annot.bind('<ButtonRelease-1>', self.selecting_folder)
 
-        # TODO: Annotator selection drop down
-        # Dropdown menu options
+        # Annotator selection drop down
         self.annotators = ["Metehan", "Ronald"]
         self.selected_annotator = StringVar()
         self.selected_annotator.set("Select")
@@ -47,11 +48,17 @@ class InitWindow:
 
     def add_new_annotator(self, event):
         max_len = 15
-        new_annotator = simpledialog.askstring("New Annotator", "Enter the name/alias of the new annotator:").strip()
+        new_annotator = simpledialog.askstring("New Annotator", "Enter the name/alias of the new annotator:")
+        if new_annotator is None:
+            return
+        new_annotator = new_annotator.strip()
         while len(new_annotator) == 0 or len(new_annotator) > max_len:
             messagebox.showerror("Error", message="Annotator name cannot be empty!" if len(new_annotator) == 0 else
                                  f"Annotator name should be less than {max_len} characters")
             new_annotator = simpledialog.askstring("New Annotator", "Enter the name/alias of the new annotator:")
+            if new_annotator is None:
+                return
+            new_annotator = new_annotator.strip()
         if new_annotator in self.annotators:
             messagebox.showerror("Error", message="Annotator already exists, select it from the dropdown menu!")
         self.annotators.append(new_annotator)
@@ -103,6 +110,7 @@ class InitWindow:
         self.check_frames_dir(self.frames_dir)
         self.check_annot_dir(self.annot_dir)
         # TODO: if everything is all set write a config file for loading the same settings
+        # TODO: Write config for each annotator separately
         self.write_config()
         self.leftframe.destroy()
         self.midframe.destroy()
@@ -125,3 +133,5 @@ class AnnotationWindow:
         self.midframe.grid(row=0, column=1, sticky="en")
         self.rightframe = LabelFrame(win, text="Annotating", padx=5, pady=5)
         self.rightframe.grid(row=0, column=2, sticky="en")
+
+        annotate_all()
