@@ -9,14 +9,14 @@ import numpy as np
 class Annotator:
 
     def __init__(self):
-        self.MASK_COARSE_DIR = 'masks_coarse_clear'
+        self.MASK_COARSE_DIR = 'data/region_masks'
         self.N_COARSE = 21
         # TODO: Add option to rename people to the GUI
         self.PERSON = ['adult', 'child']
         self.annot_scale = {self.PERSON[0]: 1, self.PERSON[1]: 0.5, 'frame': 0.5}
-        self.frame = cv2.imread('rid_base.png')  # dummy frame for warnings!
+        self.frame = cv2.imread('data/region_masks/rid_base.png')  # dummy frame for warnings!
         # TODO: Check if rid_base exists and show an error if not!
-        self.sketches = {pers: cv2.imread('rid_base.png') for pers in self.PERSON}
+        self.sketches = {pers: cv2.imread('data/region_masks/rid_base.png') for pers in self.PERSON}
         self.selected_regions = []
         self.regions_per_person = {self.PERSON[0]: [], self.PERSON[1]: []}
         self.hlighted_regions = {self.PERSON[0]: [], self.PERSON[1]: []}
@@ -26,7 +26,7 @@ class Annotator:
         self.mask_index = self.create_mask_index()
 
     def create_mask_index(self):
-        mask_ind = {pers: np.zeros_like(cv2.imread(f'rid_base.png', 0)) for pers in self.PERSON}
+        mask_ind = {pers: np.zeros_like(cv2.imread(f'data/region_masks/rid_base.png', 0)) for pers in self.PERSON}
         for pers in self.PERSON:
             for rid in range(self.N_COARSE):
                 mask = cv2.imread(f'{self.MASK_COARSE_DIR}/rid_{rid}.png', 0)
@@ -237,7 +237,7 @@ class Annotator:
                 for person in self.PERSON:
                     self.regions_per_person[person].insert(0, regions[person])
 
-    def annotate(self, subject, root_dir, contact_frames, sig_annot_dir):
+    def annotate(self, subject, root_dir, all_frames, sig_annot_dir):
         # create_windows
         # create callbacks: 1) select 2) highlight 3) zoom 4) switch between views 5) next/previous
         # 0: quit annotating,
@@ -256,22 +256,24 @@ class Annotator:
                 except JSONDecodeError:
                     sig_annot = {}
             for frame_name in sig_annot:
-                if frame_name == contact_frames[i_cf]:
+                if frame_name == all_frames[i_cf]:
                     i_cf += 1
                 else:
                     raise ValueError(f"There is a problem with frame order in {sig_annot_file}")
-        if i_cf >= len(contact_frames):
+        if i_cf >= len(all_frames):
             return response, sig_annot
-        img_dir = os.path.join(root_dir, subject, f'cam{self.camera}')
-        frame = cv2.imread(os.path.join(img_dir, contact_frames[i_cf]))
+        # TODO: Option for subject based foldering and cameras
+        # img_dir = os.path.join(root_dir, subject, f'cam{self.camera}')
+        img_dir = root_dir
+        frame = cv2.imread(os.path.join(img_dir, all_frames[i_cf]))
         self.imshow('frame', frame, self.annot_scale['frame'])
         self.imshow(self.PERSON[0], self.sketches[self.PERSON[0]], self.annot_scale[self.PERSON[0]])
         self.imshow(self.PERSON[1], self.sketches[self.PERSON[1]], self.annot_scale[self.PERSON[1]])
         cv2.setMouseCallback('frame', self.annot_callbacks, ['frame'])
         cv2.setMouseCallback(self.PERSON[0], self.annot_callbacks, [self.PERSON[0]])
         cv2.setMouseCallback(self.PERSON[1], self.annot_callbacks, [self.PERSON[1]])
-        self.init_image(i_cf, img_dir, contact_frames)
-        while i_cf < len(contact_frames):
+        self.init_image(i_cf, img_dir, all_frames)
+        while i_cf < len(all_frames):
             response = 1
             key = cv2.waitKey(5)
             if key == ord('q') or key == ord('Q'):
@@ -281,33 +283,33 @@ class Annotator:
                 if key == ord('a') or key == ord('A'):
                     # ambiguous
                     print("Annotated for ambiguous!")
-                    sig_annot[contact_frames[i_cf]] = 'ambiguous'
+                    sig_annot[all_frames[i_cf]] = 'ambiguous'
                 else:
                     if len(self.selected_regions) > 0 and -1 in self.selected_regions[-1].values():
                         print("WARNING! You left the last selected incomplete, saving without the last selection!")
                         self.selected_regions.pop()  # removing incomplete annotation
-                    print(f'Accepted annotation for {subject}/{contact_frames[i_cf]} ({i_cf+1}/{len(contact_frames)}): '
+                    print(f'Accepted annotation for {subject}/{all_frames[i_cf]} ({i_cf+1}/{len(all_frames)}): '
                           f'{self.selected_regions}')
                     # TODO: Get rid of writing the color into the annotation json
-                    sig_annot[contact_frames[i_cf]] = self.selected_regions.copy()
+                    sig_annot[all_frames[i_cf]] = self.selected_regions.copy()
                 # Save annotation dictionary for subject
                 with open(sig_annot_file, 'w') as f:
                     json.dump(sig_annot, f)
                 # to the next image
                 i_cf += 1
-                if i_cf >= len(contact_frames):
+                if i_cf >= len(all_frames):
                     break
-                self.init_image(i_cf, img_dir, contact_frames)
-                if contact_frames[i_cf] in sig_annot:
-                    self.get_prev_annot(sig_annot[contact_frames[i_cf]])
+                self.init_image(i_cf, img_dir, all_frames)
+                if all_frames[i_cf] in sig_annot:
+                    self.get_prev_annot(sig_annot[all_frames[i_cf]])
             elif key == ord('p') or key == ord('P'):
                 # previous annotations
                 i_cf -= 1
                 if i_cf < 0:
                     raise ValueError("index went lower than zero!")
-                self.init_image(i_cf, img_dir, contact_frames)
-                self.get_prev_annot(sig_annot[contact_frames[i_cf]])
-                print(f'Previous annotation for {subject}/{contact_frames[i_cf]} ({i_cf}/{len(contact_frames)}): '
+                self.init_image(i_cf, img_dir, all_frames)
+                self.get_prev_annot(sig_annot[all_frames[i_cf]])
+                print(f'Previous annotation for {subject}/{all_frames[i_cf]} ({i_cf}/{len(all_frames)}): '
                       f'{self.selected_regions}')
             elif key == ord('1'):
                 self.camera = 1
@@ -319,29 +321,30 @@ class Annotator:
                 self.camera = 4
             elif key == ord('r') or key == ord('R') or key == ord('-'):
                 print("Copying last annotations!")
-                self.init_image(i_cf, img_dir, contact_frames)
-                self.get_prev_annot(sig_annot[contact_frames[i_cf - 1]])
-            img_dir = os.path.join(root_dir, subject, f'cam{self.camera}')
-            self.frame = cv2.imread(os.path.join(img_dir, contact_frames[i_cf]))
+                self.init_image(i_cf, img_dir, all_frames)
+                self.get_prev_annot(sig_annot[all_frames[i_cf - 1]])
+            # TODO: Option for subject and camera
+            # img_dir = os.path.join(root_dir, subject, f'cam{self.camera}')
+            img_dir = root_dir
+            self.frame = cv2.imread(os.path.join(img_dir, all_frames[i_cf]))
             self.imshow('frame', frame, self.annot_scale['frame'])
         cv2.destroyAllWindows()
         return response, sig_annot
 
 
 def annotate_all(root_dir, sig_annot_dir):
-    all_subjects = [tup[0] for tup in sorted(subj_contact_count.items(), key=lambda x: x[1])]
-    print(all_subjects)
-    for subject in all_subjects:
-        binary_annot = get_binary_annots(subject, binary_annot_dir)
-        contact_frames = get_contact_frames(binary_annot)
-        response, sig_annot = annotate(subject, root_dir, contact_frames, sig_annot_dir)
-        # Save annotation dictionary for subject
-        if response != 2 and len(sig_annot) > 0:
-            print(f"Saving annotation for {subject}!")
-            with open(os.path.join(sig_annot_dir, f'{subject}.json'), 'w') as f:
-                json.dump(sig_annot, f)
-        if response == 0:
-            break
+    subject = os.path.dirname(root_dir)  # folder name is the subject name
+    # Supports files with .jpg, .jpeg, and .png format
+    all_frames = [filename for filename in os.listdir(root_dir) if filename.endswith((".jpg", ".jpeg", ".png"))]
+    annotator_obj = Annotator()
+    response, sig_annot = annotator_obj.annotate(subject, root_dir, all_frames, sig_annot_dir)
+    # Save annotation dictionary for subject
+    if response != 2 and len(sig_annot) > 0:
+        print(f"Saving annotation for {subject}!")
+        with open(os.path.join(sig_annot_dir, f'{subject}.json'), 'w') as f:
+            json.dump(sig_annot, f)
+    if response == 0:
+        print("response 0")  # maybe useful for subject based annotation
 
 
 def main():

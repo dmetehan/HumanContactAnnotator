@@ -46,6 +46,8 @@ class InitWindow:
         self.button3.pack(padx=3, pady=3)
         self.button3.bind('<ButtonRelease-1>', self.check_if_start)
 
+        # TODO: Add option to have folders per subject in the frames folder
+
     def add_new_annotator(self, event):
         max_len = 15
         new_annotator = simpledialog.askstring("New Annotator", "Enter the name/alias of the new annotator:")
@@ -116,7 +118,7 @@ class InitWindow:
         self.midframe.destroy()
         self.rightframe.destroy()
         self.lastframe.destroy()
-        AnnotationWindow(self.win)
+        AnnotationWindow(self.win, self.frames_dir, self.annot_dir)
 
     def write_config(self):
         # TODO: check if different than current config
@@ -124,7 +126,7 @@ class InitWindow:
 
 
 class AnnotationWindow:
-    def __init__(self, win):
+    def __init__(self, win, frames_dir, annot_dir):
         self.win = win
 
         self.leftframe = LabelFrame(win, text="Frames Folder", padx=5, pady=5)
@@ -134,4 +136,4 @@ class AnnotationWindow:
         self.rightframe = LabelFrame(win, text="Annotating", padx=5, pady=5)
         self.rightframe.grid(row=0, column=2, sticky="en")
 
-        annotate_all()
+        annotate_all(frames_dir, annot_dir)
