@@ -11,7 +11,7 @@ def bring_window_on_top(win):
 def init_starting_window():
     window = Tk()
     init_window = InitWindow(window)
-    window.geometry("400x150")
+    window.geometry("500x150")
     bring_window_on_top(window)
     window.title("Human Contact Annotator")
     window.mainloop()
