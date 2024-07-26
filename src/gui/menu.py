@@ -9,15 +9,15 @@ class InitWindow:
     def __init__(self, win):
         self.win = win
 
-        self.button_annotate = Button(win, text="Annotate", wraplength=80)
+        self.button_annotate = Button(win, text="Annotate", wraplength=180)
         self.button_annotate.pack(padx=3, pady=3)
         self.button_annotate.bind('<ButtonRelease-1>', self.init_annotation_window)
 
-        self.button_interannotator_agreement = Button(win, text="Interannotator Agreement", wraplength=80)
+        self.button_interannotator_agreement = Button(win, text="Interannotator Agreement", wraplength=180)
         self.button_interannotator_agreement.pack(padx=3, pady=3)
         self.button_interannotator_agreement.bind('<ButtonRelease-1>', self.init_interannotator_window)
 
-        self.button_visualize_annotations = Button(win, text="Visualize Annotations", wraplength=80)
+        self.button_visualize_annotations = Button(win, text="Visualize Annotations", wraplength=180)
         self.button_visualize_annotations.pack(padx=3, pady=3)
         self.button_visualize_annotations.bind('<ButtonRelease-1>', self.init_visualization_window)
 
