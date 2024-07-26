@@ -220,6 +220,7 @@ class Annotator:
             self.zoom(flags, param)
 
     def init_image(self, i_cf, img_dir, contact_frames):
+        # TODO: Dynamically adjust the scale of the image depending on the image size
         # starting a new annotation for the new frame
         self.selected_regions = []
         self.regions_per_person = {self.PERSON[0]: [], self.PERSON[1]: []}
@@ -237,7 +238,7 @@ class Annotator:
                 for person in self.PERSON:
                     self.regions_per_person[person].insert(0, regions[person])
 
-    def annotate(self, subject, root_dir, all_frames, sig_annot_dir):
+    def annotate(self, subject, root_dir, all_frames, sig_annot_file):
         # create_windows
         # create callbacks: 1) select 2) highlight 3) zoom 4) switch between views 5) next/previous
         # 0: quit annotating,
@@ -245,7 +246,6 @@ class Annotator:
         # 2: continue annotating and no save is needed.
         response = 2
         sig_annot = {}
-        sig_annot_file = os.path.join(sig_annot_dir, f'{subject}.json')
         i_cf = 0
         if os.path.exists(sig_annot_file):
             # Read previously saved annotation file to continue from it.
@@ -265,8 +265,8 @@ class Annotator:
         # TODO: Option for subject based foldering and cameras
         # img_dir = os.path.join(root_dir, subject, f'cam{self.camera}')
         img_dir = root_dir
-        frame = cv2.imread(os.path.join(img_dir, all_frames[i_cf]))
-        self.imshow('frame', frame, self.annot_scale['frame'])
+        self.frame = cv2.imread(os.path.join(img_dir, all_frames[i_cf]))
+        self.imshow('frame', self.frame, self.annot_scale['frame'])
         self.imshow(self.PERSON[0], self.sketches[self.PERSON[0]], self.annot_scale[self.PERSON[0]])
         self.imshow(self.PERSON[1], self.sketches[self.PERSON[1]], self.annot_scale[self.PERSON[1]])
         cv2.setMouseCallback('frame', self.annot_callbacks, ['frame'])
@@ -280,6 +280,7 @@ class Annotator:
                 response = 0
                 break
             elif key == ord('y') or key == ord('Y') or key == ord('a') or key == ord('A') or key == 13:  # enter
+                # TODO: Decide to remove/keep ambiguous annotations
                 if key == ord('a') or key == ord('A'):
                     # ambiguous
                     print("Annotated for ambiguous!")
@@ -327,24 +328,28 @@ class Annotator:
             # img_dir = os.path.join(root_dir, subject, f'cam{self.camera}')
             img_dir = root_dir
             self.frame = cv2.imread(os.path.join(img_dir, all_frames[i_cf]))
-            self.imshow('frame', frame, self.annot_scale['frame'])
+            self.imshow('frame', self.frame, self.annot_scale['frame'])
         cv2.destroyAllWindows()
         return response, sig_annot
 
 
-def annotate_all(root_dir, sig_annot_dir):
-    subject = os.path.dirname(root_dir)  # folder name is the subject name
+def annotate_all(root_dir, sig_annot_dir, annotator):
+    subject = os.path.basename(root_dir)  # folder name is the subject name
     # Supports files with .jpg, .jpeg, and .png format
     all_frames = [filename for filename in os.listdir(root_dir) if filename.endswith((".jpg", ".jpeg", ".png"))]
     annotator_obj = Annotator()
-    response, sig_annot = annotator_obj.annotate(subject, root_dir, all_frames, sig_annot_dir)
+    sig_annot_file = os.path.join(sig_annot_dir, f'{annotator}_{subject}.json')
+    print(sig_annot_file)
+    response, sig_annot = annotator_obj.annotate(subject, root_dir, all_frames, sig_annot_file)
     # Save annotation dictionary for subject
     if response != 2 and len(sig_annot) > 0:
-        print(f"Saving annotation for {subject}!")
-        with open(os.path.join(sig_annot_dir, f'{subject}.json'), 'w') as f:
+        print(f"Saving annotation for {annotator} of the frames folder {subject}!")
+        with open(sig_annot_file, 'w') as f:
             json.dump(sig_annot, f)
     if response == 0:
         print("response 0")  # maybe useful for subject based annotation
+        return False
+    return True
 
 
 def main():

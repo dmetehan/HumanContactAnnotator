@@ -1,11 +1,11 @@
 import os.path
 import configparser
-from tkinter import simpledialog, IntVar, StringVar, OptionMenu, LabelFrame, Button, Checkbutton, filedialog, messagebox
+from tkinter import simpledialog, Label, IntVar, StringVar, OptionMenu, LabelFrame, Button, Checkbutton, filedialog, messagebox
 
-from .annotate import annotate_all
+from src.backend.annotate import annotate_all
 
 
-class InitWindow:
+class InitAnnotationWindow:
     def __init__(self, win):
         self.win = win
         self.config_dir = "configs"
@@ -23,7 +23,7 @@ class InitWindow:
         self.button_add_new = Button(self.leftframe, text="Add New", wraplength=80)
         self.button_add_new.pack(padx=3, pady=3)
         self.button_add_new.bind('<ButtonRelease-1>', self.add_new_annotator)
-        self.annotators = ["Metehan", "Ronald"]
+        self.annotators = self.get_annotators()
         self.selected_annotator = StringVar()
         self.selected_annotator.set("Select")
         self.annotator_dropdown = OptionMenu(self.leftframe, self.selected_annotator, *self.annotators, command=self.load_config)
@@ -51,7 +51,15 @@ class InitWindow:
         self.button3.pack(padx=3, pady=3)
         self.button3.bind('<ButtonRelease-1>', self.check_if_start)
 
+    def get_annotators(self):
+        annotators = []
+        for filename in os.listdir(self.config_dir):
+            if filename.endswith(".ini"):
+                annotators.append(filename[:-4])
+        return annotators
+
     def add_new_annotator(self, event):
+        # TODO: Add a check for only alphabetic characters! No digits, no spaces, no symbols!
         max_len = 15
         new_annotator = simpledialog.askstring("New Annotator", "Enter the name/alias of the new annotator:")
         if new_annotator is None:
@@ -72,11 +80,11 @@ class InitWindow:
         self.annotator_dropdown.destroy()
         self.button_add_new.destroy()
         # recreate new ones:
-        self.annotator_dropdown = OptionMenu(self.leftframe, self.selected_annotator, *self.annotators)
-        self.annotator_dropdown.pack(padx=3, pady=3)
         self.button_add_new = Button(self.leftframe, text="Add New", wraplength=80)
         self.button_add_new.pack(padx=3, pady=3)
         self.button_add_new.bind('<ButtonRelease-1>', self.add_new_annotator)
+        self.annotator_dropdown = OptionMenu(self.leftframe, self.selected_annotator, *self.annotators)
+        self.annotator_dropdown.pack(padx=3, pady=3)
 
     def selecting_folder(self, event):
         selected_dir = filedialog.askdirectory()
@@ -149,8 +157,6 @@ class InitWindow:
         elif self.annot_dir == '':
             messagebox.showerror("Path Error", message="Annotations folder not selected!")
             return False
-        # TODO: Check if there are any annotations in the folder!
-        # TODO: Check if annotations match with any of the frames/subjects in the frames folder!
         return True
 
     def check_annotator(self):
@@ -175,7 +181,7 @@ class InitWindow:
         self.rightframe.destroy()
         self.lastframe.destroy()
         # Create the annotation GUI
-        AnnotationWindow(self.win, self.frames_dir, self.annot_dir)
+        AnnotationWindow(self.win, self.frames_dir, self.annot_dir, self.selected_annotator.get())
 
     def write_config(self):
         os.makedirs(self.config_dir, exist_ok=True)
@@ -202,15 +208,28 @@ class InitWindow:
             self.annot_dir = config['Annotations']['folder']
             self.button_annot.config(text=self.annot_dir)
 
+
 class AnnotationWindow:
-    def __init__(self, win, frames_dir, annot_dir):
+    def __init__(self, win, frames_dir, annot_dir, annotator):
         self.win = win
+        self.win.geometry("570x180")
 
-        self.leftframe = LabelFrame(win, text="Frames Folder", padx=5, pady=5)
+        self.leftframe = LabelFrame(win, text="Annotation Controls", padx=5, pady=5)
         self.leftframe.grid(row=0, column=0, sticky="en")
-        self.midframe = LabelFrame(win, text="Annotations Folder", bg="yellow", padx=5, pady=5)
-        self.midframe.grid(row=0, column=1, sticky="en")
-        self.rightframe = LabelFrame(win, text="Annotating", padx=5, pady=5)
-        self.rightframe.grid(row=0, column=2, sticky="en")
 
-        annotate_all(frames_dir, annot_dir)
+        annotation_controls = "<Mouse-Left>: Select region pair\n" \
+                              "<Mouse-Right>: Remove region pair\n" \
+                              "<Mouse-Mid>: Zoom In/Out on each window\n" \
+                              "Y / <Enter>: Accept annotation for the current frame and move to the next frame\n" \
+                              "P: Go to the previous frame and annotations to make changes\n" \
+                              "R: Copy the previous frame annotations to the current frame. Can be further edited\n" \
+                              "Q: Quit the program (doesn't save the annotations for the current frame)"
+        label = Label(self.leftframe, text=annotation_controls, font='Calibri 12')
+        label.pack()
+
+        win.update()
+
+        completed = annotate_all(frames_dir, annot_dir, annotator)
+        if completed:
+            messagebox.showinfo(title="Completed!", message="Annotation completed!")
+        win.destroy()
