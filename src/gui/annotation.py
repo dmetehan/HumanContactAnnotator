@@ -8,6 +8,7 @@ from src.backend.annotate import annotate_all
 class InitAnnotationWindow:
     def __init__(self, win):
         self.win = win
+        self.win.geometry("440x150")
         self.config_dir = "configs"
 
         self.leftframe = LabelFrame(win, text="Annotator Name", padx=5, pady=5)

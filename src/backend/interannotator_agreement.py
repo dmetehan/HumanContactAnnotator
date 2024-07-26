@@ -1,24 +1,22 @@
 import os
 import json
 import numpy as np
+from itertools import combinations
 from sklearn.metrics import cohen_kappa_score, jaccard_score
 
 
 def read_annotations(path):
     annotations = {}
-    for filename in os.listdir(path):
-        subject = filename.split('.')[0]
-        with open(os.path.join(path, filename), 'r') as f:
-            annotations[subject] = json.load(f)
+    # TODO: The following part is for subject based annotating
+    # for filename in os.listdir(path):
+    #     subject = filename.split('.')[0]
+    #     with open(os.path.join(path, filename), 'r') as f:
+    #         annotations[subject] = json.load(f)
+
+    # non-subject based annotations
+    with open(path, 'r') as f:
+        annotations["default"] = json.load(f)
     return annotations
-
-
-def subset_select(ronald, all_set):
-    subset = {}
-    for subj in ronald:
-        frame = list(ronald[subj].keys())[0]
-        subset[subj] = {frame: all_set[subj][frame]}
-    return subset
 
 
 def convert_to_binary(subset, res=21):
@@ -44,37 +42,18 @@ def convert_to_binary(subset, res=21):
     return binary, binary_segment
 
 
-def calc_agreement(metehan_bin, ronald_bin, metehan_bin_seg, ronald_bin_seg, results, res=21):
+def calc_agreement(metehan_bin, ronald_bin, metehan_bin_seg, ronald_bin_seg, res=21):
     kappa = {k: cohen_kappa_score(metehan_bin[k], ronald_bin[k]) for k in range(res * res)
              if (np.sum(metehan_bin[k]) + np.sum(ronald_bin[k])) > 0}  # not nan values
     kappa_seg = {k: cohen_kappa_score(metehan_bin_seg[k], ronald_bin_seg[k]) for k in range(res + res)
                  if (np.sum(metehan_bin_seg[k]) + np.sum(ronald_bin_seg[k])) > 0}  # not nan values
     # reg_id_kappa = {(k // res, k % res): kappa[k] for k in kappa}
     # print(reg_id_kappa)
-    results[f'{res}+{res}'] = {'kappa': np.mean(list(kappa_seg.values()))}
-    results[f'{res}x{res}'] = {'kappa': np.mean(list(kappa.values()))}
-    print(f"Kappa for {res}+{res} regions: {results[f'{res}+{res}']['kappa']}")
-    print(f"Kappa for {res}x{res} regions: {results[f'{res}x{res}']['kappa']}")
-
-
-def comb_regs(subset, res=21):
-    assert res in [6, 21]
-    if res == 21:
-        return subset
-    else:
-        mapping = {}
-        with open("combined_regions_6.txt", 'r') as f:
-            for i, line in enumerate(f):
-                for reg in list(map(int, map(str.strip, line.strip().split(',')))):
-                    mapping[reg] = i
-        newset = {}
-        for subj in subset:
-            newset[subj] = {}
-            for frame in subset[subj]:
-                newset[subj][frame] = []
-                for item in subset[subj][frame]:
-                    newset[subj][frame].append({'adult': mapping[item['adult']], 'child': mapping[item['child']]})
-        return newset
+    return np.mean(list(kappa_seg.values())), np.mean(list(kappa.values()))
+    # results[f'{res}+{res}'] = {'kappa': np.mean(list(kappa_seg.values()))}
+    # results[f'{res}x{res}'] = {'kappa': np.mean(list(kappa.values()))}
+    # print(f"Kappa for {res}+{res} regions: {results[f'{res}+{res}']['kappa']}")
+    # print(f"Kappa for {res}x{res} regions: {results[f'{res}x{res}']['kappa']}")
 
 
 def onehot_encoding(annot1, annot2, res, segmentation=False):
@@ -109,19 +88,28 @@ def calc_jaccard(metehan_comb, ronald_comb, results, res):
     print(f"Jaccard for {res}x{res} regions: {results[f'{res}x{res}']['jaccard']}")
 
 
-def main():
-    all_set = read_annotations('annotations/signature/all')
-    ronald = read_annotations('annotations/signature/signature_ronald')
-    metehan = subset_select(ronald, all_set)
-    results = {}
-    for res in [21, 6]:
-        metehan_comb = comb_regs(metehan, res=res)
-        ronald_comb = comb_regs(ronald, res=res)
-        metehan_bin, metehan_bin_seg = convert_to_binary(metehan_comb, res=res)
-        ronald_bin, ronald_bin_seg = convert_to_binary(ronald_comb, res=res)
-        calc_agreement(metehan_bin, ronald_bin, metehan_bin_seg, ronald_bin_seg, results, res=res)
-        calc_jaccard(metehan_comb, ronald_comb, results, res=res)
+def calc_pairwise_agreement(first_path, second_path):
+    first_annot = read_annotations(first_path)
+    second_annot = read_annotations(second_path)
+    first_bin, first_bin_seg = convert_to_binary(first_annot)
+    second_bin, second_bin_seg = convert_to_binary(second_annot)
+    # TODO: Add option for jaccard score calculation as well
+    return calc_agreement(first_bin, second_bin, first_bin_seg, second_bin_seg)
 
 
-if __name__ == '__main__':
-    main()
+def agreement_for_all_annotator_pairs(annotators, annot_dir):
+    all_possible_pairs = list(combinations(annotators, 2))
+    seg_results = {cur_annotator: [] for cur_annotator in annotators}
+    sig_results = {cur_annotator: [] for cur_annotator in annotators}
+    for pair in all_possible_pairs:
+        paths = [os.path.join(annot_dir, filename) for annotator in pair for filename in os.listdir(annot_dir)
+                 if annotator in filename and filename.endswith(".json")]
+        print(paths)
+        cur_seg_result, cur_sig_result = calc_pairwise_agreement(*paths)
+        for annotator in pair:
+            seg_results[annotator].append(cur_seg_result)
+            sig_results[annotator].append(cur_sig_result)
+    for annotator in seg_results:
+        seg_results[annotator] = (np.average(seg_results[annotator]), np.std(seg_results[annotator]))
+        sig_results[annotator] = (np.average(sig_results[annotator]), np.std(sig_results[annotator]))
+    return seg_results, sig_results

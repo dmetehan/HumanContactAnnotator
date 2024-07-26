@@ -10,6 +10,7 @@ class Annotator:
 
     def __init__(self):
         self.MASK_COARSE_DIR = 'data/region_masks'
+        # TODO: Add option to make different region masks possible by calculating N_COARSE from the MASK_COARSE_DIR.
         self.N_COARSE = 21
         # TODO: Add option to rename people to the GUI
         self.PERSON = ['adult', 'child']
@@ -350,13 +351,3 @@ def annotate_all(root_dir, sig_annot_dir, annotator):
         print("response 0")  # maybe useful for subject based annotation
         return False
     return True
-
-
-def main():
-    root_dir = r"C:\Users\Doyra001\GithubRepos\contact-annotator\pci_frames\all"
-    sig_annot_dir = r"C:\Users\Doyra001\GithubRepos\contact-signature-annotator\annotations\signature\all"
-    annotate_all(root_dir, sig_annot_dir)
-
-
-if __name__ == '__main__':
-    main()
