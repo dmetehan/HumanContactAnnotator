@@ -1,5 +1,5 @@
 from tkinter import Tk
-from src.gui import InitWindow
+from src.gui.menu import InitWindow
 
 
 def bring_window_on_top(win):
@@ -11,7 +11,7 @@ def bring_window_on_top(win):
 def init_starting_window():
     window = Tk()
     init_window = InitWindow(window)
-    window.geometry("400x150")
+    window.geometry("440x150")
     bring_window_on_top(window)
     window.title("Human Contact Annotator")
     window.mainloop()
