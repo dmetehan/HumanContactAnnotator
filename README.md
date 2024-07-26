@@ -1,6 +1,5 @@
 # HumanContactAnnotator
 
-TODO:
-1. Implement a GUI.
-2. Add option to select different body resolutions based on the directory selected.
-3. Add visualization options (contact distribution heatmaps).
+In dyadic interactions, observing physical contact between interactants is crucial to understand the nature and quality of their interaction. To facilitate the systematic annotation of physical contact from images, we developed Human Contact Annotator, an intuitive tool to label body parts in contact. The tool is publicly available to enable research into analyzing contact signatures and physical contact in dyads during close proximity interactions. In addition to annotating body region-based contact signatures, our tool allows for informative contact segmentation visualizations, which provide quick insights into the nature of touch over an extended period.
+
+
