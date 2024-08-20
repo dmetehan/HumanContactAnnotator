@@ -75,11 +75,8 @@ def light_up(person, reg_cnts, cmap='inferno'):
             x = (count - minimum) / (maximum - minimum)
             r, g, b = colormap(x)[:3]
             img_cpy[MASK_INDEX[person] == (regions + 1)] = (255*b, 255*g, 255*r)
-    for y in range(img_cpy.shape[0]):
-        for x in range(img_cpy.shape[1]):
-            for c in range(img_cpy.shape[2]):
-                alpha = base_cpy_hsv[y, x, 2] / 255
-                img_cpy[y, x, c] = np.clip(alpha * img_cpy[y, x, c], 0, 255)
+    alpha = base_cpy_hsv[:, :, [2]] / 255
+    img_cpy[:] = np.clip(alpha * img_cpy, 0, 255)
     return img_cpy
 
 
