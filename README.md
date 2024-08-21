@@ -10,3 +10,15 @@ In dyadic interactions, observing physical contact between interactants is cruci
   * Otherwise, download https://github.com/dmetehan/HumanContactAnnotator/archive/refs/heads/main.zip and unzip
 * Inside the HumanContactAnnotator folder:
   > pip install -r requirements.txt
+
+## Usage
+
+* Annotating Contact Signatures:
+
+  ![Annotation Tool](imgs/gui2.png)
+* Visualizing Region Contact Frequencies:
+
+  ![Annotation Tool](imgs/gui-heatmaps.png)
+* Calculating Inter-annotator Agreement:
+
+  ![Interannotator Agreement](imgs/gui-results.png)
