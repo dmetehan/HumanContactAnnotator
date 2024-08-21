@@ -10,6 +10,7 @@ In dyadic interactions, observing physical contact between interactants is cruci
   * Otherwise, download https://github.com/dmetehan/HumanContactAnnotator/archive/refs/heads/main.zip and unzip
 * Inside the HumanContactAnnotator folder:
   > pip install -r requirements.txt
+* > python main.py
 
 ## Usage
 
