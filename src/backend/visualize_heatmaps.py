@@ -99,8 +99,12 @@ def vis_heatmaps(reg_cnts):
     cmap = 'YlOrRd'  # 'YlOrBr'  # 'inferno'
     for person in ['child', 'adult']:
         img = light_up(person, reg_cnts, cmap=cmap)
-        cv2.imshow(person, img)
-    plot_color_gradients([cmap])
+        # cv2.imshow(person, img)
+        fig = plt.figure(person, (4, 10))
+        plt.imshow(cv2.cvtColor(img, cv2.COLOR_BGR2RGB))
+        plt.axis('off')
+    plt.show()
+    #plot_color_gradients([cmap])
     cv2.waitKey(0)
 
 

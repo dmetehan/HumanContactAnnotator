@@ -9,12 +9,13 @@ import numpy as np
 class Annotator:
 
     def __init__(self):
+        self.DEFAULT_HEIGHT = 500
         self.MASK_COARSE_DIR = 'data/region_masks'
         # TODO: Add option to make different region masks possible by calculating N_COARSE from the MASK_COARSE_DIR.
         self.N_COARSE = 21
         # TODO: Add option to rename people to the GUI
         self.PERSON = ['adult', 'child']
-        self.annot_scale = {self.PERSON[0]: 1, self.PERSON[1]: 0.5, 'frame': 0.5}
+        self.annot_scale = {self.PERSON[0]: 0.75, self.PERSON[1]: 0.5, 'frame': 0.5}
         self.frame = cv2.imread('data/region_masks/rid_base.png')  # dummy frame for warnings!
         # TODO: Check if rid_base exists and show an error if not!
         self.sketches = {pers: cv2.imread('data/region_masks/rid_base.png') for pers in self.PERSON}
@@ -53,14 +54,15 @@ class Annotator:
                     img_cpy[self.mask_index[person] == (i + 1)] = (0, 25, 0)
         return img_cpy
 
-    def imshow(self, window, img, scale, person=None):
+    def imshow(self, window, img, scale, person=None, location=None):
         if person:
             img = self.light_up(img, person)
         width = int(img.shape[1] * scale)
         height = int(img.shape[0] * scale)
         dim = (width, height)
         cv2.imshow(window, cv2.resize(img, dim, interpolation=cv2.INTER_AREA))
-        # cv2.moveWindow(window, 40, 30)
+        if location:
+            cv2.moveWindow(window, location[0], location[1])
 
     def highlight(self, x, y, param):
         person = param[0]
@@ -228,7 +230,8 @@ class Annotator:
         self.hlighted_regions = {self.PERSON[0]: [], self.PERSON[1]: []}
         self.remove_pair = {self.PERSON[0]: -1, self.PERSON[1]: -1}
         self.frame = cv2.imread(os.path.join(img_dir, contact_frames[i_cf]))
-        self.imshow('frame', self.frame, self.annot_scale['frame'])
+        self.annot_scale['frame'] = (self.DEFAULT_HEIGHT / self.frame.shape[0])
+        self.imshow('frame', self.frame, self.annot_scale['frame'], location=(50, 270))
         self.imshow(self.PERSON[0], self.sketches[self.PERSON[0]], self.annot_scale[self.PERSON[0]])
         self.imshow(self.PERSON[1], self.sketches[self.PERSON[1]], self.annot_scale[self.PERSON[1]])
 

@@ -7,7 +7,7 @@ from src.backend.visualize_heatmaps import heatmaps_for_gt, vis_heatmaps
 class HeatmapsWindow:
     def __init__(self, win):
         self.win = win
-        self.win.geometry("300x200")
+        self.win.geometry("300x200+50+50")
 
         self.leftframe = LabelFrame(win, text="Annotation File", padx=5, pady=5)
         self.leftframe.grid(row=0, column=0, sticky="en")

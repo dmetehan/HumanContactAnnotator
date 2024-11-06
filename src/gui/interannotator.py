@@ -1,13 +1,13 @@
 import os
 from tkinter import Button, Label, LabelFrame, messagebox, filedialog, IntVar, Checkbutton
 
-from src.backend.interannotator_agreement import agreement_for_all_annotator_pairs
+from src.backend.interannotator_agreement import agreement_for_all_annotator_pairs, read_annotations
 
 
 class InterannotatorWindow:
     def __init__(self, win):
         self.win = win
-        self.win.geometry("300x200")
+        self.win.geometry("300x200+50+50")
 
         self.leftframe = LabelFrame(win, text="Annotations Folder", padx=5, pady=5)
         self.leftframe.grid(row=0, column=0, sticky="en")
@@ -31,17 +31,29 @@ class InterannotatorWindow:
         self.rightframe.destroy()
         self.midframe = LabelFrame(self.win, text="Annotators", padx=5, pady=5)
         self.midframe.grid(row=0, column=1, sticky="en")
-        annotators = []
+        max_annotated_frames = 0
+        annotators = {}
         for filename in os.listdir(self.annot_dir):
+            # TODO: Fix the bug that can be caused by having annotations for
+            #  different folders in the same annotations directory!
             if filename.endswith(".json"):
+                cur_annots = read_annotations(os.path.join(self.annot_dir, filename))
+                if len(cur_annots['default']) > max_annotated_frames:
+                    max_annotated_frames = len(cur_annots['default'])
+                elif len(cur_annots['default']) < max_annotated_frames:
+                    continue  # do not take into account unfinished annotations
                 cur_annotator = filename.split("_")[0]
                 if cur_annotator not in annotators:
-                    annotators.append(cur_annotator)
-        self.annotator_selection = {cur_annotator: IntVar() for cur_annotator in annotators}
+                    annotators[cur_annotator] = len(cur_annots['default'])
+        valid_annotators = []
+        for cur_annotator in annotators:
+            if annotators[cur_annotator] == max_annotated_frames:
+                valid_annotators.append(cur_annotator)
+        self.annotator_selection = {cur_annotator: IntVar() for cur_annotator in valid_annotators}
         self.annotator_checkboxes = {cur_annotator: Checkbutton(self.midframe, text=cur_annotator,
                                                                 variable=self.annotator_selection[cur_annotator],
                                                                 onvalue=1, offvalue=0)
-                                     for cur_annotator in annotators}
+                                     for cur_annotator in valid_annotators}
         for _, checkbox in self.annotator_checkboxes.items():
             checkbox.pack()
             checkbox.select()
@@ -105,7 +117,7 @@ class InterannotatorWindow:
 class AgreementRankingWindow:
     def __init__(self, win, segmentation_results, signature_results):
         self.win = win
-        self.win.geometry("300x200")
+        self.win.geometry("300x200+50+50")
 
         self.leftframe = LabelFrame(win, text="Results", padx=5, pady=5)
         self.leftframe.grid(row=0, column=0, sticky="en")
